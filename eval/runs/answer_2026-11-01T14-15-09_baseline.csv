@@ -25,7 +25,7 @@ G07,trap,Where do I record a manual peak integration in Skyline?,TM-105 v2.0 §7
 
 Manual integration is allowed only for the conditions in that table: a peak where the light and heavy apexes differ by more than the co-elution limit, or a peak Skyline flags as truncated. [TM-105 v2.0 §7.2 step 7.2.8]
 
-If no permitted condition applies, do not adjust the peak. [TM-105 v2.0 §7.2 step 7.2.7]",,
+If no permitted condition applies, do not adjust the peak. [TM-105 v2.0 §7.2 step 7.2.7]","Conditional pass (2026-11-01): core answer correct (Skyline audit log, TM-105 v2.0 §7.2.6). Second statement lists 2 of the 3 permitted conditions (omits the neighbouring peak) and cites step 7.2.8; it points to the correct manual integration table in §7.2, where the reader finds the third condition.",Dr. Ebbie
 G08,trap,Can we still analyse a batch with Skyline 3.6?,TM-105 v2.0 §5.2; TM-105 v2.0 §2.4,True,8,0.275,TM-105 v2.0 §2.4,,True,False,True,True,True,False,,,False,"Whether Skyline 3.6 is still permitted is not covered by the effective SOPs. They say that TM-105 v1.0 and v2.0 use different Skyline versions [TM-105 v2.0 §2.4], but the excerpts do not name those versions, so I can't tell which one 3.6 belongs to.
 
 What",,
