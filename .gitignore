@@ -8,7 +8,9 @@
 !/requirements.txt
 !/rag/
 !/eval/
-/rag/**/__pycache__/
 !/SOPs/
 /SOPs/*
 !/SOPs/clean/
+
+# Python bytecode, wherever it appears
+__pycache__/
