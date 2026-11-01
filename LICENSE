@@ -1,0 +1,60 @@
+LICENSES FOR THIS REPOSITORY
+Flying Peptides training case: SOP RAG assistant (MVP)
+Copyright (c) 2026 Holger Ebhardt (Dr. Ebbie)
+
+This repository contains two kinds of material under two licences.
+
+1. SOFTWARE: MIT License
+   Applies to: build_master_list.py, check_attribution.py, rag/*.py, eval/*.py
+   and any other source code in this repository.
+
+2. DOCUMENTS AND DATA: Creative Commons Attribution 4.0 International (CC BY 4.0)
+   https://creativecommons.org/licenses/by/4.0/
+   Applies to: the SOPs in SOPs/clean/ (QMS-001, QMS-003, TM-104, TM-105 v1.0
+   and v2.0), master_document_list.csv, eval/gold_questions.csv, the evaluation
+   run files in eval/runs/, and README.md.
+   Credit as: "Flying Peptides training case by Holger Ebhardt (Dr. Ebbie)",
+   with a link to this repository and an indication of any changes.
+
+THIRD-PARTY SOURCE
+The method SOPs (TM-104, TM-105) are adapted from:
+Bringans S, Ito J, Casey T, et al. "A robust multiplex immunoaffinity mass
+spectrometry assay (PromarkerD) for clinical prediction of diabetic kidney
+disease." Clin Proteomics 2020;17:37. doi:10.1186/s12014-020-09302-w.
+Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+The methods were restructured and rewritten as controlled procedures for a
+fictitious company; procedural detail was added for training purposes. The
+authors, Proteomics International and Atturos do not endorse this work.
+Anyone reusing the method SOPs must keep this attribution.
+
+NOT LICENSED
+- CC BY 4.0 covers the paper's text only. Neither this repository nor its
+  licences grant any right to the biomarker patent or to the PromarkerD
+  trade mark; the SOPs use the neutral name "3-plex immuno-MRM DKD assay".
+- Positive Climb Diagnostics is a fictitious manufacturer. Names and roles in
+  the SOPs are illustrative. The SOPs are training material: not a real
+  company, product, QMS or validated laboratory procedure, and not for use
+  in diagnostics or patient care.
+
+------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2026 Holger Ebhardt (Dr. Ebbie)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

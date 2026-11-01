@@ -95,6 +95,10 @@ Rebuild the store after every SOP change, and repeat both evaluation runs before
 
 Follow cross-references between SOPs, add keyword search, a gold set of 20+ questions with acceptance criteria approved before any run, risk assessment and traceability, a simple local question interface, and the remaining SOPs (TM-101 to TM-103, TM-106, QMS-002, QMS-004 to QMS-006).
 
+## License
+
+Code: MIT. SOPs, gold questions, evaluation data and this README: CC BY 4.0. The method SOPs keep the attribution below. See [LICENSE](LICENSE) for details, including what is not licensed (patent, trade mark).
+
 ## Attribution
 
 Method SOPs adapted from: Bringans S, Ito J, Casey T, et al. "A robust multiplex immunoaffinity mass spectrometry assay (PromarkerD) for clinical prediction of diabetic kidney disease." *Clin Proteomics* 2020;17:37. doi:10.1186/s12014-020-09302-w. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). The methods were restructured and rewritten as controlled procedures for a fictitious company; procedural detail was added for training purposes. The authors, Proteomics International and Atturos do not endorse this work.
