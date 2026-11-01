@@ -3,6 +3,7 @@
 # Everything else in RAG_sys stays local.
 /*
 !/.gitignore
+!/README.md
 !/build_master_list.py
 !/check_attribution.py
 !/requirements.txt
