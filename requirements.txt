@@ -1,0 +1,6 @@
+# SOP RAG pipeline (Flying Peptides training case). Python 3.11.
+# Install inside the venv:  pip install -r requirements.txt
+chromadb>=1.5,<2
+langchain-text-splitters>=0.3
+pyyaml>=6
+anthropic>=0.40

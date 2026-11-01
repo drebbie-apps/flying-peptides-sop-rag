@@ -1,10 +1,13 @@
 # SOP RAG corpus repository (Flying Peptides training case).
-# Tracked: clean corpus, master document list, build script.
+# Tracked: clean corpus, master document list, scripts, RAG pipeline code.
 # Everything else in RAG_sys stays local.
 /*
 !/.gitignore
 !/build_master_list.py
 !/check_attribution.py
+!/requirements.txt
+!/rag/
+/rag/**/__pycache__/
 !/SOPs/
 /SOPs/*
 !/SOPs/clean/
