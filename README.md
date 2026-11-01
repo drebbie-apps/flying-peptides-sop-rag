@@ -6,6 +6,8 @@ Flying Peptides training case by Dr. Ebbie. Positive Climb Diagnostics is a fict
 
 Status: MVP validated (VAL-RAG-001, ISO 13485 §4.1.6) and **released for beta-testing** on 01-Nov-2026 as a training and orientation aid.
 
+Showcase page: [flying.moichel.ch/sop-assistant](https://flying.moichel.ch/sop-assistant/)
+
 ## Why it matters
 
 In a GxP laboratory the risk of a generic chatbot is not that it knows too little, but that it quotes the wrong version of a procedure. This project follows one method from the published paper to a governed AI tool:
