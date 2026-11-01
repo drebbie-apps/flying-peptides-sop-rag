@@ -1,0 +1,33 @@
+﻿id,type,question,expected,model_called,chunks_used,best_distance,citations,invalid_citations,answered,contains,excludes,citations_ok,cites_expected,all_expected,refused,strict,passed,reply,manual_verdict,manual_reviewer
+G01,single,"When does an approved SOP become effective, and which version do I work to until then?",QMS-001 v1.0 §6.5,True,8,0.532,,,False,False,True,False,False,False,,,False,Not covered by the effective SOPs.,,
+G02,single,How long do we have to close an NCR?,QMS-003 v1.0 §7.1,True,8,0.413,QMS-003 v1.0 §7.1.2; QMS-003 v1.0 §6.7.2,,True,True,True,True,True,True,,,True,"Close each NCR within 30 calendar days of detection, or record the reason for the extension in the NCR [QMS-003 v1.0 §7.1.2]. Quality Assurance closes the NCR [QMS-003 v1.0 §7.1.2]. Closure requires that the disposition is complete, the final status is set and any CAPA number is linked [QMS-003 v1.0 §6.7.2].",,
+G03,single,What is the analytical flow rate and the total run time of the LC method?,TM-104 v1.0 §7.2,True,8,0.44,TM-104 v1.0 §7.2,,True,True,True,True,True,True,,,True,"Analytical flow is 5 µL/min (two nano pumps combined), through the trap column onto the analytical column [TM-104 v1.0 §7.2]. Total run time is 8 min, starting at injection (time zero). This does not include the time the autosampler needs to draw the sample [TM-104 v1.0 §7.2].
+
+If the method file differs from the §7.2 table, do not acquire and follow TM-104 §8.3 [TM-104 v1.0 §7.2].",,
+G04,single,"What signal-to-noise ratio must the heavy (SIS) peak of a sample well reach, and what happens if it does not?",TM-105 v2.0 §8.2; TM-105 v2.0 §7.3,True,8,0.411,TM-105 v2.0 §8.2; TM-105 v2.0 §7.3.1; TM-105 v2.0 §7.3.4; TM-105 v2.0 §7.3.5,,True,True,True,True,True,True,,,True,"The heavy (SIS) peak of a sample well must have S/N > 5 [TM-105 v2.0 §8.2]. S/N is calculated as Total Area ÷ Total Background [TM-105 v2.0 §7.3.1].
+
+If it fails, the Associate Scientist marks that protein result of the sample ""invalid – SIS failure"" [TM-105 v2.0 §7.3.4]. The Associate Scientist then follows TM-105 §8.3 for each such result as a sample-level nonconformity [TM-105 v2.0 §7.3.5].
+
+The excerpts do not include TM-105 §8.3, so the steps of that nonconformity handling are not covered by the effective SOPs.",,
+G05,cross,The system suitability test failed. What do I do?,TM-104 v1.0 §7.5; QMS-003 v1.0 §6.1,True,8,0.693,TM-104 v1.0 §7.5,,True,True,True,True,True,False,,,True,"As the Associate Scientist, do the following:
+
+1. The Technical Reviewer signs off the SST record as failed. [TM-104 v1.0 §7.5, step 7.5.4]
+2. Do not inject samples. Keep the plate at 4 °C in the autosampler. [TM-104 v1.0 §7.5, step 7.5.6]
+3. Raise an NCR (QMS-003-F01) under QMS-003 §6.1. [TM-104 v1.0 §7.5, step 7.5.7]
+4. Troubleshoot only through actions recorded in the NCR, e.g. leak check, spray check, trap or column replacement. [TM-104 v1.0",,
+G06,cross,A batch analysis started under TM-105 v1.0 was not finished when v2.0 became effective. Can I finish it under v1.0?,TM-105 v2.0 §2.4; QMS-001 v1.0 §7.1,True,8,0.399,TM-105 v2.0 §2.4.1; TM-105 v2.0 §2.4; TM-105 v2.0 §2.4.2; TM-105 v2.0 §2.4.3,,True,True,True,True,True,False,,,True,"No. A batch whose analysis under TM-105 v1.0 is not complete on the effective date of TM-105 v2.0 is analysed again from TM-105 §7.1.1 under v2.0, because v1.0 is then Superseded [TM-105 v2.0 §2.4.1]. Each batch is analysed under one TM-105 version from start to end [TM-105 v2.0 §2.4].
+
+Conditions for the re-analysis:
+- Start again from the raw data files, in a new Skyline document created from TM-105-T01 [TM-105 v2.0 §2.4.2].
+- Do not open the stored v1.0 Skyline document in the new Skyline version or save it again [TM-105 v2.0 §2.4.2].
+- Training on v1.0 does not qualify an Associate Scientist or Technical Reviewer for v2.0. Training on v2.0 is recorded before first use [TM-105 v2.0 §2.4.3].",,
+G07,trap,Where do I record a manual peak integration in Skyline?,TM-105 v2.0 §7.2,True,8,0.3,TM-105 v2.0 §7.2,,True,True,True,True,True,True,,,True,"Record the reason for each manual integration in the Skyline audit log. The reason you enter must be the permitted condition from the manual integration table of TM-105 §7.2, and it is mandatory. [TM-105 v2.0 §7.2 step 7.2.6]
+
+Manual integration is allowed only for the conditions in that table: a peak where the light and heavy apexes differ by more than the co-elution limit, or a peak Skyline flags as truncated. [TM-105 v2.0 §7.2 step 7.2.8]
+
+If no permitted condition applies, do not adjust the peak. [TM-105 v2.0 §7.2 step 7.2.7]",,
+G08,trap,Can we still analyse a batch with Skyline 3.6?,TM-105 v2.0 §5.2; TM-105 v2.0 §2.4,True,8,0.275,TM-105 v2.0 §2.4,,True,False,True,True,True,False,,,False,"Whether Skyline 3.6 is still permitted is not covered by the effective SOPs. They say that TM-105 v1.0 and v2.0 use different Skyline versions [TM-105 v2.0 §2.4], but the excerpts do not name those versions, so I can't tell which one 3.6 belongs to.
+
+What",,
+G09,unanswerable,"What bead-to-antibody ratio is used to conjugate the antibodies to the magnetic beads, and how long can the conjugated beads be stored?",none,True,8,0.575,,,,,,,,,True,True,True,Not covered by the effective SOPs.,,
+G10,unanswerable,How do we bridge a new calibrator batch against the current one?,none,True,8,0.53,,,,,,,,,True,True,True,Not covered by the effective SOPs.,,
