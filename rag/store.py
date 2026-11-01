@@ -3,14 +3,15 @@
 Usage (from the RAG_sys folder, venv active):
     python rag\store.py                 rebuild the store from SOPs/clean and run the self-test
     python rag\store.py "question"      retrieve the top chunks for a question (Effective only)
-    python rag\store.py --all "question"   same, all statuses (audit view; never used for answers)
+    python rag\store.py --all "question"   same, all chunks (audit view; never used for answers)
 In code:  from store import retrieve;  hits = retrieve("Which Skyline version do we use?")
 
 Store: persistent Chroma database in RAG_sys/chroma_store (kept out of Git; rebuilt from the
 corpus at any time). One collection "sop_chunks", cosine distance, embeddings from Chroma's
 built-in local model all-MiniLM-L6-v2. Every chunk is stored, Superseded ones included, so the
-store keeps the audit trail. retrieve() filters on status = Effective unless told otherwise, so a
-superseded version is never returned for an answer. The collection metadata records when and
+store keeps the audit trail. retrieve() returns the top K = 8 chunks with status = Effective and
+section_type = content unless told otherwise, so a superseded version is never returned for an
+answer, and revision history, approval and metadata rows do not crowd out the procedure text. The collection metadata records when and
 from which Git commit of the corpus the store was built, and the chunking settings.
 Flying Peptides training case. Fictitious manufacturer: Positive Climb Diagnostics.
 """
@@ -30,6 +31,7 @@ from loader import RAG_SYS, load_corpus  # noqa: E402
 STORE_DIR = Path(os.environ.get("RAG_STORE_DIR", RAG_SYS / "chroma_store"))
 COLLECTION = "sop_chunks"
 EMBEDDING_MODEL = "all-MiniLM-L6-v2 (Chroma built-in, local ONNX)"
+K = 8  # chunks retrieved for an answer
 
 
 def _client(path=None):
@@ -75,14 +77,19 @@ def get_collection(path=None, embedding_function=None):
     return _client(path).get_collection(COLLECTION, **kwargs)
 
 
-def retrieve(question, k=5, status="Effective", collection=None):
-    """Top-k chunks for a question. status=None returns all statuses (audit view only)."""
+def retrieve(question, k=K, status="Effective", content_only=True, collection=None):
+    """Top-k chunks for a question: Effective content chunks by default.
+    status=None and content_only=False give the audit view (all chunks); never used for answers."""
     col = collection or get_collection()
-    where = {"status": status} if status else None
+    conditions = ([{"status": status}] if status else []) + (
+        [{"section_type": "content"}] if content_only else [])
+    where = (conditions[0] if len(conditions) == 1
+             else {"$and": conditions} if conditions else None)
     res = col.query(query_texts=[question], n_results=k, where=where,
                     include=["documents", "metadatas", "distances"])
     return [{"chunk_id": m["chunk_id"], "doc_key": m["doc_key"], "status": m["status"],
-             "section": m["section"], "steps": m["steps"], "distance": round(d, 3), "text": doc}
+             "section": m["section"], "section_type": m["section_type"], "steps": m["steps"],
+             "distance": round(d, 3), "text": doc}
             for doc, m, d in zip(res["documents"][0], res["metadatas"][0], res["distances"][0])]
 
 
@@ -122,31 +129,37 @@ def self_test(path=None, embedding_function=None):
     if ("TM-105 v1.0", "Superseded") not in by_doc:
         problems.append("TM-105 v1.0 is not in the store (audit trail incomplete)")
 
-    # 2 The filter: asking for every Effective chunk returns no other status.
-    n_eff = sum(n for (_, s), n in by_doc.items() if s == "Effective")
-    everything = col.query(query_texts=["Skyline version"], n_results=n_eff,
-                           where={"status": "Effective"}, include=["metadatas"])["metadatas"][0]
-    leaked = [m["chunk_id"] for m in everything if m["status"] != "Effective"]
-    if leaked or len(everything) != n_eff:
-        problems.append(f"Effective filter returned {len(everything)} of {n_eff} chunks; "
-                        f"non-Effective: {leaked[:5]}")
+    # 2 The filter: asking for every answerable chunk returns no other status or section type.
+    all_meta = col.get(include=["metadatas"])["metadatas"]
+    n_ok = sum(m["status"] == "Effective" and m["section_type"] == "content" for m in all_meta)
+    n_admin = sum(m["section_type"] == "admin" for m in all_meta)
+    everything = retrieve("Skyline version", k=n_ok, collection=col)
+    leaked = [h["chunk_id"] for h in everything
+              if h["status"] != "Effective" or h["section_type"] != "content"]
+    if leaked or len(everything) != n_ok:
+        problems.append(f"filter returned {len(everything)} of {n_ok} chunks; "
+                        f"not Effective content: {leaked[:5]}")
     else:
-        print(f"Filter: all {n_eff} Effective chunks returned, 0 Superseded.")
+        print(f"Filter: all {n_ok} Effective content chunks returned, 0 Superseded, "
+              f"0 of the {n_admin} admin chunks.")
 
     # 3 Test questions: filtered retrieval, plus the unfiltered audit view for the trap.
     for question, want_doc, want_text in TEST_QUESTIONS:
-        hits = retrieve(question, k=5, collection=col)
+        hits = retrieve(question, collection=col)
         print(f"\nQ: {question}")
         show(hits)
-        if any(h["status"] != "Effective" for h in hits):
-            problems.append(f"'{question}': a non-Effective chunk was returned")
-        if not any(h["doc_key"] == want_doc and (not want_text or want_text in h["text"])
-                   for h in hits):
+        if any(h["status"] != "Effective" or h["section_type"] != "content" for h in hits):
+            problems.append(f"'{question}': a Superseded or admin chunk was returned")
+        rank = next((i + 1 for i, h in enumerate(hits) if h["doc_key"] == want_doc
+                     and (not want_text or want_text in h["text"])), None)
+        if rank is None:
             warnings.append(f"'{question}': no {want_doc} chunk"
-                            f"{' with ' + repr(want_text) if want_text else ''} in the top 5")
-    trap = retrieve(TEST_QUESTIONS[0][0], k=5, status=None, collection=col)
+                            f"{' with ' + repr(want_text) if want_text else ''} in the top {K}")
+        else:
+            print(f"  -> expected source ({want_doc}) at rank {rank}")
+    trap = retrieve(TEST_QUESTIONS[0][0], status=None, content_only=False, collection=col)
     n_old = sum(h["doc_key"] == "TM-105 v1.0" for h in trap)
-    print(f"\nWithout the filter (audit view), the top 5 for '{TEST_QUESTIONS[0][0]}' "
+    print(f"\nWithout the filters (audit view), the top {K} for '{TEST_QUESTIONS[0][0]}' "
           f"hold {n_old} TM-105 v1.0 chunk(s):")
     show(trap)
 
@@ -164,6 +177,7 @@ if __name__ == "__main__":
     if not args:
         sys.exit(self_test())
     status = "Effective"
+    content_only = True
     if args[0] == "--all":
-        status, args = None, args[1:]
-    show(retrieve(" ".join(args), k=5, status=status))
+        status, content_only, args = None, False, args[1:]
+    show(retrieve(" ".join(args), status=status, content_only=content_only))

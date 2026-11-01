@@ -21,7 +21,9 @@ Rules
 4 Metadata = the document metadata from the loader, plus: section ("7.2"; "0" for the title
   block before section 1), section_title, heading_path ("7 Procedure > 7.2 Import and peak
   integration"), steps (numbered steps in or continued into the chunk, "7.2.1, 7.2.2"; "none"
-  if there are none), chunk_id ("TM-105_v2.0_041"), chunk_index, chars (length of the SOP text).
+  if there are none), section_type ("admin" for Revision history, Approval and Document metadata,
+  which are stored for the audit trail but not used for answers; "content" otherwise),
+  chunk_id ("TM-105_v2.0_041"), chunk_index, chars (length of the SOP text).
 Flying Peptides training case. Fictitious manufacturer: Positive Climb Diagnostics.
 """
 import re
@@ -35,6 +37,7 @@ CHUNK_SIZE = 512
 CHUNK_OVERLAP = 51  # 10 % of CHUNK_SIZE
 SEPARATORS = ["\n\n", "\n", ". ", "; ", ", ", " ", ""]
 HEADING = re.compile(r"^(#{2,4}) (\d+(?:\.\d+)*) (.+)$", re.M)
+ADMIN_SECTIONS = {"Revision history", "Approval", "Document metadata"}
 STEP = re.compile(r"(?:^|\|)[ \t]*(\d+(?:\.\d+){2,})[ \t]", re.M)
 
 
@@ -130,6 +133,8 @@ def chunk_document(doc):
                 page_content=f"[{key} {meta['title']} · §{number} {title}]\n{piece}",
                 metadata={**meta, "section": number, "section_title": title,
                           "heading_path": path,
+                          "section_type": "admin" if path.split(" > ")[0].split(" ", 1)[-1]
+                          in ADMIN_SECTIONS else "content",
                           "steps": _steps(number, text, start, start + len(piece)),
                           "chunk_id": f"{prefix}_{n:03d}", "chunk_index": n,
                           "chars": len(piece), "start_index": start}))
@@ -172,6 +177,10 @@ def self_test():
             if re.sub(r"[\s|]", "", text[covered:]):
                 problems.append(f"{d.metadata['doc_key']} §{number}: text lost at the end")
     print(f"{len(chunks)} chunks in total; CHUNK_SIZE {CHUNK_SIZE}, CHUNK_OVERLAP {CHUNK_OVERLAP}.")
+    n_admin = sum(c.metadata["section_type"] == "admin" for c in chunks)
+    print(f"Admin chunks (Revision history, Approval, Document metadata): {n_admin}")
+    if not 0 < n_admin < len(chunks):
+        problems.append(f"section_type: {n_admin} admin chunks of {len(chunks)}")
     headers = [c.metadata["chunk_id"] for c in chunks
                if _is_fragment(c.page_content.split("\n", 1)[1])]
     print(f"Table headers that could not be merged with their first row (row too long): "
