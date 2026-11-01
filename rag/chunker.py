@@ -10,6 +10,10 @@ Rules
   section or an SOP; heading lines are not part of the chunk text.
 2 A section longer than CHUNK_SIZE characters is split by size with CHUNK_OVERLAP characters
   of overlap, preferring paragraph, line (table row), sentence and word boundaries.
+  A piece that cannot stand alone (only table syntax such as a closing '|', or a table header
+  without its rows) is merged into the next piece, else the previous one, within CHUNK_SIZE.
+  A lone table header whose first row is too long to join it stays a chunk of its own
+  (2 cases; repeating the header in each piece is a phase 5 refinement).
 3 Each chunk text starts with a context line that is embedded with it, e.g.
   [TM-105 v2.0 Skyline data analysis · §7.2 Import and peak integration]
   CHUNK_SIZE limits the SOP text after this line (the line adds about 50 to 90 characters;
@@ -71,13 +75,55 @@ def _steps(section, text, start, end):
     return ", ".join(dict.fromkeys(steps)) or "none"
 
 
+ALNUM = re.compile(r"[A-Za-z0-9]")
+TABLE_RULE = re.compile(r"^\|(\s*:?-+:?\s*\|)+$")
+
+
+def _is_fragment(piece):
+    """A size-split piece that cannot stand alone: no letters or digits (e.g. a lone '|'),
+    or a table header whose rows went to the next piece."""
+    return not ALNUM.search(piece) or bool(TABLE_RULE.match(piece.strip().split("\n")[-1]))
+
+
+def _attach_back(text, out, frag):
+    if out:
+        s, _ = out[-1]
+        joined = text[s:frag[0] + len(frag[1])]
+        if len(joined) <= CHUNK_SIZE:
+            out[-1] = (s, joined)
+            return out
+    if ALNUM.search(frag[1]):  # keep real content rather than lose it
+        out.append(frag)
+    return out  # a piece of table syntax only is dropped
+
+
+def _merge_fragments(text, pieces):
+    """Merge fragments into the next piece, else into the previous one, within CHUNK_SIZE."""
+    out, carry = [], None
+    for start, piece in pieces:
+        if carry:
+            joined = text[carry[0]:start + len(piece)]
+            if len(joined) <= CHUNK_SIZE:
+                start, piece = carry[0], joined
+            else:
+                out = _attach_back(text, out, carry)
+            carry = None
+        if _is_fragment(piece):
+            carry = (start, piece)
+            continue
+        out.append((start, piece))
+    if carry:
+        out = _attach_back(text, out, carry)
+    return out
+
+
 def chunk_document(doc):
     meta, key = doc.metadata, doc.metadata["doc_key"]
     prefix = f"{meta['doc_id']}_v{meta['version']}"
     splitter, chunks = _splitter(), []
     for number, title, path, text in sections(doc.page_content):
-        pieces = [(0, text)] if len(text) <= CHUNK_SIZE else [
-            (p.metadata["start_index"], p.page_content) for p in splitter.create_documents([text])]
+        pieces = [(0, text)] if len(text) <= CHUNK_SIZE else _merge_fragments(text, [
+            (p.metadata["start_index"], p.page_content) for p in splitter.create_documents([text])])
         for start, piece in pieces:
             n = len(chunks)
             chunks.append(Document(
@@ -120,12 +166,16 @@ def self_test():
             covered = 0
             for c in (c for c in cs if c.metadata["section"] == number):
                 s = c.metadata["start_index"]
-                if text[covered:s].strip():
+                if re.sub(r"[\s|]", "", text[covered:s]):
                     problems.append(f"{d.metadata['doc_key']} §{number}: text lost before offset {s}")
                 covered = max(covered, s + c.metadata["chars"])
-            if text[covered:].strip():
+            if re.sub(r"[\s|]", "", text[covered:]):
                 problems.append(f"{d.metadata['doc_key']} §{number}: text lost at the end")
     print(f"{len(chunks)} chunks in total; CHUNK_SIZE {CHUNK_SIZE}, CHUNK_OVERLAP {CHUNK_OVERLAP}.")
+    headers = [c.metadata["chunk_id"] for c in chunks
+               if _is_fragment(c.page_content.split("\n", 1)[1])]
+    print(f"Table headers that could not be merged with their first row (row too long): "
+          f"{len(headers)} {headers if headers else ''}")
 
     ids = [c.metadata["chunk_id"] for c in chunks]
     if len(set(ids)) != len(ids):
@@ -136,6 +186,8 @@ def self_test():
             problems.append(f"{m['chunk_id']}: {m['chars']} characters > {CHUNK_SIZE}")
         if re.search(r"^#{1,6} ", body, re.M):
             problems.append(f"{m['chunk_id']}: contains a heading line (crosses a section)")
+        if not ALNUM.search(body):
+            problems.append(f"{m['chunk_id']}: no content (table syntax only)")
         if not c.page_content.startswith(f"[{m['doc_key']} "):
             problems.append(f"{m['chunk_id']}: context line missing")
         bad = [k for k, v in m.items() if not isinstance(v, (str, int, float, bool))]
