@@ -83,12 +83,16 @@ def check_citations(reply, hits):
     return list(dict.fromkeys(valid)), list(dict.fromkeys(invalid))
 
 
+MAX_TOKENS = 4000  # 700 cut replies off (G05, G08 in the 1-Nov-2026 baseline run)
+
+
 def call_claude(system, prompt):
+    """Return (reply text, stop_reason)."""
     import anthropic
     resp = anthropic.Anthropic().messages.create(
-        model=MODEL, max_tokens=700, system=system,
+        model=MODEL, max_tokens=MAX_TOKENS, system=system,
         messages=[{"role": "user", "content": prompt}])
-    return "".join(b.text for b in resp.content if b.type == "text").strip()
+    return "".join(b.text for b in resp.content if b.type == "text").strip(), resp.stop_reason
 
 
 def answer(question, llm=call_claude, collection=None):
@@ -97,16 +101,23 @@ def answer(question, llm=call_claude, collection=None):
     result = {"question": question, "hits": hits, "best_distance":
               all_hits[0]["distance"] if all_hits else None}
     if not hits:
-        result.update(reply=NOT_COVERED, called_model=False, valid=[], invalid=[], flags=[])
+        result.update(reply=NOT_COVERED, called_model=False, valid=[], invalid=[], flags=[],
+                      stop_reason="")
         return result
-    reply = llm(SYSTEM, build_prompt(question, hits))
+    out = llm(SYSTEM, build_prompt(question, hits))
+    reply, stop = out if isinstance(out, tuple) else (out, "end_turn")
     valid, invalid = check_citations(reply, hits)
     flags = []
+    if stop == "max_tokens":
+        flags.append(f"reply cut off at max_tokens = {MAX_TOKENS}")
+    elif stop not in ("end_turn", "stop_sequence"):
+        flags.append(f"unexpected stop_reason {stop!r}")
     if reply != NOT_COVERED and not valid:
         flags.append("no valid citation")
     if invalid:
         flags.append(f"citation not in the excerpts: {', '.join(invalid)}")
-    result.update(reply=reply, called_model=True, valid=valid, invalid=invalid, flags=flags)
+    result.update(reply=reply, called_model=True, valid=valid, invalid=invalid, flags=flags,
+                  stop_reason=stop)
     return result
 
 

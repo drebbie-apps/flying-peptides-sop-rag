@@ -14,6 +14,7 @@ Automatic checks
     contains       must_contain appears in the reply
     excludes       must_not_contain does not appear in the reply
     citations ok   at least one valid citation and none that matches no excerpt (rag/answer.py)
+    complete       the reply was not cut off (stop_reason) and has no other flag
     cites expected at least one citation points to an expected source (same doc_key, same
                    section or a step in it); "all expected" is reported for cross questions
     pass           all of the above
@@ -61,12 +62,14 @@ def evaluate(row, r):
     out = {"id": row["id"], "type": row["type"], "question": row["question"],
            "expected": row["expected_sources"], "model_called": r["called_model"],
            "chunks_used": len(r["hits"]), "best_distance": r["best_distance"],
-           "citations": "; ".join(r["valid"]), "invalid_citations": "; ".join(r["invalid"])}
+           "citations": "; ".join(r["valid"]), "invalid_citations": "; ".join(r["invalid"]),
+           "stop_reason": r["stop_reason"], "flags": "; ".join(r["flags"])}
     if not row["sources"]:
         refused = NOT_COVERED in reply
         out.update(answered="", contains="", excludes="", citations_ok="",
                    cites_expected="", all_expected="", refused=refused,
-                   strict=reply.strip() == NOT_COVERED, passed=refused and not r["invalid"])
+                   strict=reply.strip() == NOT_COVERED,
+                   passed=refused and not r["invalid"] and not r["flags"])
     else:
         must, must_not = row["must_contain"].strip(), row["must_not_contain"].strip()
         found = [cited(r["valid"], s) for s in row["sources"]]
@@ -76,6 +79,7 @@ def evaluate(row, r):
             "excludes": (squash(must_not) not in squash(reply)) if must_not else True,
             "citations_ok": bool(r["valid"]) and not r["invalid"],
             "cites_expected": any(found),
+            "complete": not r["flags"],
         }
         out.update(checks, all_expected=all(found), refused="", strict="",
                    passed=all(checks.values()))
@@ -106,6 +110,8 @@ def run(label, llm=call_claude, collection=None, runs_dir=RUNS):
         else:
             print(f"     refused {yn(res['refused'])} | strict {yn(res['strict'])} | "
                   f"model called {yn(res['model_called'])} (best distance {res['best_distance']})")
+        if res["flags"]:
+            print(f"     FLAG {res['flags']}")
         print(f"     citations: {res['citations'] or 'none'}"
               + (f" | NOT IN EXCERPTS: {res['invalid_citations']}" if res["invalid_citations"] else ""))
         print("     " + res["reply"].replace("\n", "\n     ") + "\n")
