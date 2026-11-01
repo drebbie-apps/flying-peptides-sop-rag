@@ -1,0 +1,2 @@
+﻿run_at,label,code_commit,corpus_commit,store_built_at,chunks,chunk_size,chunk_overlap,k,max_distance,answerable,hit_rate,all_found,usable,mrr,unanswerable_refused,superseded_returned,detail_file
+2026-11-01T14-05-12,baseline,e4f77ee,8950971,2026-11-01T13:47:16,391,512,51,8,0.75,8,0.88,4,7,0.69,0/2,0,retrieval_2026-11-01T14-05-12_baseline.csv
