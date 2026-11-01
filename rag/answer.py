@@ -16,7 +16,9 @@ How an answer is made
 4 Every citation in the reply is checked against the excerpts: it must name an excerpt's
   doc_key, and its section must be that excerpt's section or a step in it. A reply with no
   valid citation, or with a citation that matches no excerpt, is flagged.
-Model: ANTHROPIC_MODEL environment variable (default claude-sonnet-5-5), temperature 0.
+Model: ANTHROPIC_MODEL environment variable (default claude-sonnet-5-5). No sampling settings
+(anthropic SDK 2.x does not accept temperature); consistency comes from the fixed prompt and
+the citation check.
 The API key is read from ANTHROPIC_API_KEY only.
 Flying Peptides training case. Fictitious manufacturer: Positive Climb Diagnostics.
 """
@@ -84,7 +86,7 @@ def check_citations(reply, hits):
 def call_claude(system, prompt):
     import anthropic
     resp = anthropic.Anthropic().messages.create(
-        model=MODEL, max_tokens=700, temperature=0, system=system,
+        model=MODEL, max_tokens=700, system=system,
         messages=[{"role": "user", "content": prompt}])
     return "".join(b.text for b in resp.content if b.type == "text").strip()
 
