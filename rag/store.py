@@ -1,0 +1,169 @@
+"""Phase 4, step 4: embed the chunks, store them in Chroma and retrieve only Effective SOPs.
+
+Usage (from the RAG_sys folder, venv active):
+    python rag\store.py                 rebuild the store from SOPs/clean and run the self-test
+    python rag\store.py "question"      retrieve the top chunks for a question (Effective only)
+    python rag\store.py --all "question"   same, all statuses (audit view; never used for answers)
+In code:  from store import retrieve;  hits = retrieve("Which Skyline version do we use?")
+
+Store: persistent Chroma database in RAG_sys/chroma_store (kept out of Git; rebuilt from the
+corpus at any time). One collection "sop_chunks", cosine distance, embeddings from Chroma's
+built-in local model all-MiniLM-L6-v2. Every chunk is stored, Superseded ones included, so the
+store keeps the audit trail. retrieve() filters on status = Effective unless told otherwise, so a
+superseded version is never returned for an answer. The collection metadata records when and
+from which Git commit of the corpus the store was built, and the chunking settings.
+Flying Peptides training case. Fictitious manufacturer: Positive Climb Diagnostics.
+"""
+import datetime
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import chromadb
+from chromadb.config import Settings
+
+sys.path.insert(0, str(Path(__file__).parent))
+from chunker import CHUNK_OVERLAP, CHUNK_SIZE, chunk_corpus  # noqa: E402
+from loader import RAG_SYS, load_corpus  # noqa: E402
+
+STORE_DIR = Path(os.environ.get("RAG_STORE_DIR", RAG_SYS / "chroma_store"))
+COLLECTION = "sop_chunks"
+EMBEDDING_MODEL = "all-MiniLM-L6-v2 (Chroma built-in, local ONNX)"
+
+
+def _client(path=None):
+    return chromadb.PersistentClient(path=str(path or STORE_DIR),
+                                     settings=Settings(anonymized_telemetry=False))
+
+
+def _corpus_commit():
+    try:
+        out = subprocess.run(["git", "-C", str(RAG_SYS), "log", "-1", "--format=%h",
+                              "--", "SOPs/clean"], capture_output=True, text=True, timeout=10)
+        return out.stdout.strip() or "unknown"
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+
+
+def build_store(path=None, embedding_function=None):
+    """Delete and rebuild the collection from the corpus. Returns the collection."""
+    client = _client(path)
+    try:
+        client.delete_collection(COLLECTION)
+    except Exception:  # the collection does not exist yet
+        pass
+    chunks = chunk_corpus(load_corpus())
+    kwargs = {"embedding_function": embedding_function} if embedding_function else {}
+    col = client.create_collection(
+        COLLECTION, configuration={"hnsw": {"space": "cosine"}},
+        metadata={"built_at": datetime.datetime.now().isoformat(timespec="seconds"),
+                  "corpus_commit": _corpus_commit(), "embedding_model": EMBEDDING_MODEL,
+                  "chunk_size": CHUNK_SIZE, "chunk_overlap": CHUNK_OVERLAP,
+                  "chunks": len(chunks)},
+        **kwargs)
+    for i in range(0, len(chunks), 200):
+        batch = chunks[i:i + 200]
+        col.add(ids=[c.metadata["chunk_id"] for c in batch],
+                documents=[c.page_content for c in batch],
+                metadatas=[c.metadata for c in batch])
+    return col
+
+
+def get_collection(path=None, embedding_function=None):
+    kwargs = {"embedding_function": embedding_function} if embedding_function else {}
+    return _client(path).get_collection(COLLECTION, **kwargs)
+
+
+def retrieve(question, k=5, status="Effective", collection=None):
+    """Top-k chunks for a question. status=None returns all statuses (audit view only)."""
+    col = collection or get_collection()
+    where = {"status": status} if status else None
+    res = col.query(query_texts=[question], n_results=k, where=where,
+                    include=["documents", "metadatas", "distances"])
+    return [{"chunk_id": m["chunk_id"], "doc_key": m["doc_key"], "status": m["status"],
+             "section": m["section"], "steps": m["steps"], "distance": round(d, 3), "text": doc}
+            for doc, m, d in zip(res["documents"][0], res["metadatas"][0], res["distances"][0])]
+
+
+def show(hits):
+    for h in hits:
+        first = h["text"].split("\n", 1)[1][:110].replace("\n", " ")
+        print(f"  {h['distance']:.3f}  {h['doc_key']:<13} {h['status']:<10} §{h['section']:<5} "
+              f"steps {h['steps']:<16} {first}")
+
+
+TEST_QUESTIONS = [
+    ("Which Skyline version do we use?", "TM-105 v2.0", "26.1"),
+    ("How quickly must an NCR be raised?", "QMS-003 v1.0", "within 1 working day"),
+    ("What is the signal-to-noise acceptance criterion for a peak?", "TM-105 v2.0", "S/N"),
+    ("What must be checked in the system suitability test before a run?", "TM-104 v1.0", None),
+]
+
+
+def self_test(path=None, embedding_function=None):
+    col = build_store(path, embedding_function)
+    problems, warnings = [], []
+    meta = col.metadata
+    print(f"Store: {path or STORE_DIR}")
+    print(f"Built {meta['built_at']} from corpus commit {meta['corpus_commit']}, "
+          f"{meta['embedding_model']}, {meta['chunks']} chunks.")
+
+    # 1 Everything is stored, the superseded version included.
+    total = col.count()
+    by_doc = {}
+    for m in col.get(include=["metadatas"])["metadatas"]:
+        by_doc.setdefault((m["doc_key"], m["status"]), 0)
+        by_doc[(m["doc_key"], m["status"])] += 1
+    for (key, status), n in sorted(by_doc.items()):
+        print(f"  stored  {key:<13} {status:<10} {n:>4} chunks")
+    if total != meta["chunks"]:
+        problems.append(f"store holds {total} chunks, expected {meta['chunks']}")
+    if ("TM-105 v1.0", "Superseded") not in by_doc:
+        problems.append("TM-105 v1.0 is not in the store (audit trail incomplete)")
+
+    # 2 The filter: asking for every Effective chunk returns no other status.
+    n_eff = sum(n for (_, s), n in by_doc.items() if s == "Effective")
+    everything = col.query(query_texts=["Skyline version"], n_results=n_eff,
+                           where={"status": "Effective"}, include=["metadatas"])["metadatas"][0]
+    leaked = [m["chunk_id"] for m in everything if m["status"] != "Effective"]
+    if leaked or len(everything) != n_eff:
+        problems.append(f"Effective filter returned {len(everything)} of {n_eff} chunks; "
+                        f"non-Effective: {leaked[:5]}")
+    else:
+        print(f"Filter: all {n_eff} Effective chunks returned, 0 Superseded.")
+
+    # 3 Test questions: filtered retrieval, plus the unfiltered audit view for the trap.
+    for question, want_doc, want_text in TEST_QUESTIONS:
+        hits = retrieve(question, k=5, collection=col)
+        print(f"\nQ: {question}")
+        show(hits)
+        if any(h["status"] != "Effective" for h in hits):
+            problems.append(f"'{question}': a non-Effective chunk was returned")
+        if not any(h["doc_key"] == want_doc and (not want_text or want_text in h["text"])
+                   for h in hits):
+            warnings.append(f"'{question}': no {want_doc} chunk"
+                            f"{' with ' + repr(want_text) if want_text else ''} in the top 5")
+    trap = retrieve(TEST_QUESTIONS[0][0], k=5, status=None, collection=col)
+    n_old = sum(h["doc_key"] == "TM-105 v1.0" for h in trap)
+    print(f"\nWithout the filter (audit view), the top 5 for '{TEST_QUESTIONS[0][0]}' "
+          f"hold {n_old} TM-105 v1.0 chunk(s):")
+    show(trap)
+
+    print()
+    for w in warnings:
+        print(f"WARN  {w}")
+    for p in problems:
+        print(f"FAIL  {p}")
+    print("Store checks passed." if not problems else "Store checks failed.")
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if not args:
+        sys.exit(self_test())
+    status = "Effective"
+    if args[0] == "--all":
+        status, args = None, args[1:]
+    show(retrieve(" ".join(args), k=5, status=status))
