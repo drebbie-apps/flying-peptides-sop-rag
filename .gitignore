@@ -13,6 +13,8 @@
 !/SOPs/
 /SOPs/*
 !/SOPs/clean/
+# Change requests
+!/CR/
 
 # Python bytecode, wherever it appears
 __pycache__/
