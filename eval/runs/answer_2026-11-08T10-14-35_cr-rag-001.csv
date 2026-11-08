@@ -30,13 +30,13 @@ G06,cross,A batch analysis started under TM-105 v1.0 was not finished when v2.0 
 G07,trap,Where do I record a manual peak integration in Skyline?,TM-105 v2.0 §7.2,True,8,0.3,TM-105 v2.0 §7.2.6; TM-105 v2.0 §7.2; TM-105 v2.0 §8.4,,end_turn,,True,True,True,True,True,True,True,,,True,"Record each manual integration in the Skyline audit log. The Associate Scientist enters the permitted condition from the manual integration table as the reason, and the reason is mandatory [TM-105 v2.0 §7.2.6].
 
 - Audit logging must be on for the whole life of the batch Skyline document [TM-105 v2.0 §7.2].
-- The audit log Detailed Info report is kept as a batch record [TM-105 v2.0 §8.4].",,
+- The audit log Detailed Info report is kept as a batch record [TM-105 v2.0 §8.4].",Pass ,Dr. Ebbie
 G08,trap,Can we still analyse a batch with Skyline 3.6?,TM-105 v2.0 §5.2; TM-105 v2.0 §2.4,True,8,0.275,TM-105 v2.0 §2.4; TM-105 v2.0 §2.4.1; TM-105 v2.0 §2.4.2,,end_turn,,True,False,True,True,True,True,False,,,False,"Partly. The excerpts never name Skyline 3.6, so they do not say which Skyline version TM-105 v2.0 requires or whether 3.6 is allowed.
 
 - TM-105 v1.0 and v2.0 use different Skyline versions, and each batch is analysed under one TM-105 version from start to end [TM-105 v2.0 §2.4].
 - Once TM-105 v2.0 is effective, v1.0 is Superseded. A batch whose v1.0 analysis is not complete on that date must be analysed again from TM-105 §7.1.1 under v2.0 [TM-105 v2.0 §2.4.1].
 - Rework of a batch analysed under v1.0 starts from the raw data files in a new Skyline document created from TM-105-T01. The stored v1.0 Skyline document is not opened in the new Skyline version or saved again [TM-105 v2.0 §2.4.2].
 
-Not covered by the effective SOPs: the Skyline version numbers for v1.0 and v2.0, and therefore whether Skyline 3.6 may still be used.",,
-G09,unanswerable,"What bead-to-antibody ratio is used to conjugate the antibodies to the magnetic beads, and how long can the conjugated beads be stored?",none,True,8,0.575,,,end_turn,,,,,,,,,True,True,True,Not covered by the effective SOPs.,,
-G10,unanswerable,How do we bridge a new calibrator batch against the current one?,none,True,8,0.53,,,end_turn,,,,,,,,,True,True,True,Not covered by the effective SOPs.,,
+Not covered by the effective SOPs: the Skyline version numbers for v1.0 and v2.0, and therefore whether Skyline 3.6 may still be used.",Fail ,Dr. Ebbie
+G09,unanswerable,"What bead-to-antibody ratio is used to conjugate the antibodies to the magnetic beads, and how long can the conjugated beads be stored?",none,True,8,0.575,,,end_turn,,,,,,,,,True,True,True,Not covered by the effective SOPs.,Pass ,Dr. Ebbie
+G10,unanswerable,How do we bridge a new calibrator batch against the current one?,none,True,8,0.53,,,end_turn,,,,,,,,,True,True,True,Not covered by the effective SOPs.,Pass ,Dr. Ebbie
