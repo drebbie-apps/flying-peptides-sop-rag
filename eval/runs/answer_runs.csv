@@ -1,3 +1,4 @@
 ﻿run_at,label,code_commit,corpus_commit,store_built_at,model,k,max_distance,passed,answerable_passed,traps_passed,unanswerable_refused,expected_cited,all_expected_cited,invalid_citations,detail_file
 2026-11-01T14-15-09,baseline,0a316c5,8950971,2026-11-01T13:47:16,claude-sonnet-5-5,8,0.75,8/10,6/8,1/2,2/2,7/8,4/8,0,answer_2026-11-01T14-15-09_baseline.csv
 2026-11-01T14-27-52,baseline-maxtokens,c17f360,8950971,2026-11-01T13:47:16,claude-sonnet-5-5,8,0.75,8/10,6/8,1/2,2/2,7/8,4/8,0,answer_2026-11-01T14-27-52_baseline-maxtokens.csv
+2026-11-08T10-14-35,cr-rag-001,acf7429,8950971,2026-11-08T10:13:29,claude-sonnet-5-5,8,0.75,8/10,6/8,1/2,2/2,7/8,4/8,0,answer_2026-11-08T10-14-35_cr-rag-001.csv
