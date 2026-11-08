@@ -33,4 +33,4 @@ Reviewed: Mira Armstrong (Technical Reviewer) · 08-Nov-2026
 Approved: Tess Lindqvist (QA) · 08-Nov-2026
 
 ## Closure (after implementation)
-Commit: … · Runs: … · Result: … · D3 closed in VAL-RAG-001 v1.1 · date
+Commit: acf7429 · Runs: retrieval_2026-11-08T10-13-47_cr-rag-001, answer_2026-11-08T10-14-35_cr-rag-001 (manual review 9cdebb4) · Result: criteria 1–3 met. Self-test incl. D3 check passed; the condition-table chunks in TM-105 §7.2 now carry no step; retrieval and answer results identical to baseline (hit rate 7/8, MRR 0.69; 8/10 passed, 0 invalid citations, 0 superseded); G07 pass without citing step 7.2.8 · D3 closed in VAL-RAG-001 v1.1 · 08-Nov-2026
