@@ -69,12 +69,16 @@ def _steps(section, text, start, end):
     """Steps of this section that start inside [start, end), plus the step continued into it."""
     found = [(m.start(1), m.group(1)) for m in STEP.finditer(text)
              if m.group(1).startswith(section + ".")]
-    before = [s for pos, s in found if pos < start]
+    before = [(pos, s) for pos, s in found if pos < start]
     inside = [s for pos, s in found if start <= pos < end]
     newline = text.find("\n", start, end)
     first_line_end = end if newline == -1 else newline
     starts_new_step = any(start <= pos < first_line_end for pos, _ in found)
-    steps = ([before[-1]] if before and not starts_new_step else []) + inside
+    # A step continues into this chunk only within its own block (table or paragraph):
+    # a blank line between the step and the chunk start ends it (deviation D3).
+    carried = (before and not starts_new_step
+               and "\n\n" not in text[before[-1][0]:start])
+    steps = ([before[-1][1]] if carried else []) + inside
     return ", ".join(dict.fromkeys(steps)) or "none"
 
 
@@ -211,6 +215,13 @@ def self_test():
     if any(c.metadata["status"] != "Superseded" for c in chunks
            if c.metadata["doc_key"] == "TM-105 v1.0"):
         problems.append("a TM-105 v1.0 chunk lost its Superseded status")
+    # D3: a chunk after a step table must not carry the table's last step number.
+    for c in chunks:
+        if (c.metadata["doc_key"] == "TM-105 v2.0" and c.metadata["section"] == "7.2"
+                and "| Condition | Permitted adjustment |" in c.page_content
+                and c.metadata["steps"] != "none"):
+            problems.append(f"{c.metadata['chunk_id']}: manual integration table tagged with step "
+                            f"{c.metadata['steps']} (D3)")
     if not any("26.1" in c.page_content for c in chunks if c.metadata["doc_key"] == "TM-105 v2.0"):
         problems.append("no TM-105 v2.0 chunk mentions Skyline 26.1")
 
